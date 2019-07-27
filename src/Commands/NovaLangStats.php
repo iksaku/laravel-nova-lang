@@ -2,10 +2,10 @@
 
 namespace Coderello\LaravelNovaLang\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Collection;
 use SplFileInfo;
+use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
+use Illuminate\Filesystem\Filesystem;
 
 class NovaLangStats extends Command
 {
@@ -47,7 +47,7 @@ class NovaLangStats extends Command
      */
     public function handle()
     {
-        if (!config('app.debug')) {
+        if (! config('app.debug')) {
             $this->error('This command will only run in debug mode.');
 
             return;
@@ -56,7 +56,7 @@ class NovaLangStats extends Command
         $sourceDirectory = $this->directoryNovaSource().'/en';
         $sourceFile = $sourceDirectory.'.json';
 
-        if (!$this->filesystem->exists($sourceDirectory) || !$this->filesystem->exists($sourceFile)) {
+        if (! $this->filesystem->exists($sourceDirectory) || ! $this->filesystem->exists($sourceFile)) {
             $this->error('The source language files were not found in the vendor/laravel/nova directory.');
 
             return;
@@ -70,7 +70,7 @@ class NovaLangStats extends Command
 
         $sourceKeys = array_keys(json_decode($this->filesystem->get($sourceFile), true));
 
-        if (!in_array(':resource Details', $sourceKeys)) { // Temporary fix until laravel/nova#463 is merged
+        if (! in_array(':resource Details', $sourceKeys)) { // Temporary fix until laravel/nova#463 is merged
             $sourceKeys = array_unique(array_merge($sourceKeys, [
                 'Action',
                 'Changes',
@@ -86,7 +86,6 @@ class NovaLangStats extends Command
         $blame = collect($this->getBlame());
 
         $availableLocales->each(function (string $locale) use ($contributors, $sourceKeys, $sourceCount, $blame) {
-
             $inputDirectory = $this->directoryFrom().'/'.$locale;
 
             $inputFile = $inputDirectory.'.json';
@@ -102,11 +101,10 @@ class NovaLangStats extends Command
 
             if ($blameContributors = $blame->get($locale)) {
                 foreach ($blameContributors as $contributor => $lines) {
-                    if (!($contributor == 'hivokas' && $lines == 3)) {
-                        if (!isset($localeStat['contributors'][$contributor])) {
+                    if (! ($contributor == 'hivokas' && $lines == 3)) {
+                        if (! isset($localeStat['contributors'][$contributor])) {
                             $localeStat['contributors'][$contributor] = $lines;
-                        }
-                        else {
+                        } else {
                             if ($lines > $localeStat['contributors'][$contributor]) {
                                 $localeStat['contributors'][$contributor] = $lines;
                             }
@@ -118,19 +116,18 @@ class NovaLangStats extends Command
             $localeStat['complete'] = $sourceCount - count($missingKeys);
 
             $localeStat['contributors'] = collect($localeStat['contributors'])
-                ->map(function($lines, $name) {
+                ->map(function ($lines, $name) {
                     return compact('lines', 'name');
-                })->sort(function($a, $b) {
-                return $a['lines'] === $b['lines'] ? $a['name'] <=> $b['name'] : 0 - ($a['lines'] <=> $b['lines']);
-            })->map(function($contributor) {
-                return $contributor['lines'];
-            })->all();
+                })->sort(function ($a, $b) {
+                    return $a['lines'] === $b['lines'] ? $a['name'] <=> $b['name'] : 0 - ($a['lines'] <=> $b['lines']);
+                })->map(function ($contributor) {
+                    return $contributor['lines'];
+                })->all();
 
             $contributors->put($locale, $localeStat);
-
         });
 
-        $contributors = $contributors->sort(function($a, $b) {
+        $contributors = $contributors->sort(function ($a, $b) {
             return $a['complete'] === $b['complete'] ? $a['name'] <=> $b['name'] : 0 - ($a['complete'] <=> $b['complete']);
         });
 
@@ -141,14 +138,14 @@ class NovaLangStats extends Command
         $this->info(sprintf('Updated "contributors.json" has been output to [%s].', $outputFile));
         $this->warn('* Replace contributors.json in your fork of the repository with this file.');
 
-        $contributors->transform(function($localeStat, $locale) use ($sourceCount) {
-
+        $contributors->transform(function ($localeStat, $locale) use ($sourceCount) {
             $percent = round(($localeStat['complete'] / $sourceCount) * 100, 1).'%';
 
-            $contributors = implode(', ', array_map(function($contributor) {
+            $contributors = implode(', ', array_map(function ($contributor) {
                 if ($contributor == '(deleted)') {
                     return $contributor;
                 }
+
                 return sprintf('[%s](https://github.com/%s)', $contributor, $contributor);
             }, array_keys($localeStat['contributors'])));
 
@@ -196,8 +193,9 @@ class NovaLangStats extends Command
 
         $contributions = ['en' => ['taylorotwell' => 10001, 'bonzai' => 10000, 'davidhemphill' => 10000, 'themsaid' => 10000]];
 
-        if (!$token) {
+        if (! $token) {
             $this->error('To download newer contributions from GitHub, ensure the GITHUB_TOKEN_NOVALANG env key is set to a personal access token. Falling back to existing contributors list.');
+
             return $contributions;
         }
 
@@ -213,7 +211,7 @@ class NovaLangStats extends Command
                 'Content-Type: application/json',
             ],
             CURLOPT_POST => 1,
-            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_POSTFIELDS => json_encode(['query' => $graphql]),
         ]);
 
@@ -221,14 +219,14 @@ class NovaLangStats extends Command
 
         curl_close($curl);
 
-        if (!isset($result['data']['repository']['pullRequests']['nodes'])) {
+        if (! isset($result['data']['repository']['pullRequests']['nodes'])) {
             return $contributions;
         }
 
         $pullRequests = $result['data']['repository']['pullRequests']['nodes'];
 
         foreach ($pullRequests as $pullRequest) {
-            if (!in_array($pullRequest['number'], [148, 156], true)) {
+            if (! in_array($pullRequest['number'], [148, 156], true)) {
                 $author = $pullRequest['author']['login'] ?? '(deleted)';
 
                 foreach ($pullRequest['files']['nodes'] as $file) {
@@ -238,8 +236,7 @@ class NovaLangStats extends Command
                         if ($locale != 'cn' && $file['additions']) {
                             if (isset($contributions[$locale][$author])) {
                                 $contributions[$locale][$author] += $file['additions'];
-                            }
-                            else {
+                            } else {
                                 $contributions[$locale][$author] = $file['additions'];
                             }
                         }

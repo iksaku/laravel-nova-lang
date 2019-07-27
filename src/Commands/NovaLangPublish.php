@@ -2,10 +2,10 @@
 
 namespace Coderello\LaravelNovaLang\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Collection;
 use SplFileInfo;
+use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
+use Illuminate\Filesystem\Filesystem;
 
 class NovaLangPublish extends Command
 {
@@ -54,15 +54,15 @@ class NovaLangPublish extends Command
 
         $requestedLocales = $this->getRequestedLocales();
 
-        if (!$requestedLocales->count()) {
+        if (! $requestedLocales->count()) {
             $this->error('You must either specify one or more locales, or use the --all option.');
+
             return;
         }
 
         $requestedLocales->each(function (string $locale) use ($availableLocales) {
-
             if ($locale == 'en' && $this->isForce()) {
-                if (!$this->confirm(sprintf('Are you sure you want to republish translations for [en] locale? This will overwrite the latest file from laravel/nova.'))) {
+                if (! $this->confirm(sprintf('Are you sure you want to republish translations for [en] locale? This will overwrite the latest file from laravel/nova.'))) {
                     return;
                 }
             }

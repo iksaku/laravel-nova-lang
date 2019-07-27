@@ -2,10 +2,10 @@
 
 namespace Coderello\LaravelNovaLang\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Collection;
 use SplFileInfo;
+use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
+use Illuminate\Filesystem\Filesystem;
 
 class NovaLangMissing extends Command
 {
@@ -49,7 +49,7 @@ class NovaLangMissing extends Command
      */
     public function handle()
     {
-        if (!config('app.debug')) {
+        if (! config('app.debug')) {
             $this->error('This command will only run in debug mode.');
 
             return;
@@ -58,7 +58,7 @@ class NovaLangMissing extends Command
         $sourceDirectory = $this->directoryNovaSource().'/en';
         $sourceFile = $sourceDirectory.'.json';
 
-        if (!$this->filesystem->exists($sourceDirectory) || !$this->filesystem->exists($sourceFile)) {
+        if (! $this->filesystem->exists($sourceDirectory) || ! $this->filesystem->exists($sourceFile)) {
             $this->error('The source language files were not found in the vendor/laravel/nova directory.');
 
             return;
@@ -69,7 +69,7 @@ class NovaLangMissing extends Command
 
         $sourceKeys = array_keys(json_decode($this->filesystem->get($sourceFile), true));
 
-        if (!in_array(':resource Details', $sourceKeys)) { // Temporary fix until laravel/nova#463 is merged
+        if (! in_array(':resource Details', $sourceKeys)) { // Temporary fix until laravel/nova#463 is merged
             $sourceKeys = array_unique(array_merge($sourceKeys, [
                 'Action',
                 'Changes',
@@ -83,30 +83,29 @@ class NovaLangMissing extends Command
 
         $requestedLocales = $this->getRequestedLocales();
 
-        if (!$requestedLocales->count()) {
+        if (! $requestedLocales->count()) {
             $this->error('You must either specify one or more locales, or use the --all option.');
+
             return;
         }
 
         $requestedLocales->each(function (string $locale) use ($availableLocales, $sourceKeys, $outputDirectory) {
-
             if (! $availableLocales->contains($locale)) {
                 $this->warn(sprintf('The translation file for [%s] locale does not exist. You could help other people by creating this file and sending a PR :)', $locale));
 
-                if (!$this->confirm(sprintf('Do you wish to create the file for [%s]?', $locale))) {
+                if (! $this->confirm(sprintf('Do you wish to create the file for [%s]?', $locale))) {
                     return;
                 }
 
                 $missingKeys = $sourceKeys;
-            }
-            else {
+            } else {
                 $inputDirectory = $this->directoryFrom().'/'.$locale;
 
                 $inputFile = $inputDirectory.'.json';
 
                 $localeKeys = array_keys(json_decode($this->filesystem->get($inputFile), true));
 
-                $localeKeys = array_map(function($key) {
+                $localeKeys = array_map(function ($key) {
                     return str_replace('\\\'', '\'', $key);
                 }, $localeKeys);
 
@@ -122,8 +121,8 @@ class NovaLangMissing extends Command
 
                 $this->info(sprintf('%d missing translation keys for [%s] locale have been output to [%s].', count($missingKeys), $locale, $outputFile));
             } elseif ($this->filesystem->exists($outputFile)) {
-                    $this->warn(sprintf('[%s] locale has no missing translation keys. The existing output file at [%s] was deleted.', $locale, $outputFile));
-                    $this->filesystem->delete($outputFile);
+                $this->warn(sprintf('[%s] locale has no missing translation keys. The existing output file at [%s] was deleted.', $locale, $outputFile));
+                $this->filesystem->delete($outputFile);
             } else {
                 $this->warn(sprintf('[%s] locale has no missing translation keys. No output file was created.', $locale));
             }
